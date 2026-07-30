@@ -1,0 +1,88 @@
+Terraform the Vibe Game
+
+## Engine
+pygame
+
+# About
+This is the game about terraforming planet and satisfing needy base city, and provifing jobs for our colonist. 
+
+## Loop
+We get board, with edges, and raw inside. We can fill it with terraformed tiles we can terraform what is terraformed. There are 3 cities which have profiles what they need, but they are lazy and can reach only around itself. The board s hexagonal. 
+Each tile has 1 of 6 resource and 1 of 6 climate. The climate and resources could mix freely and crazy. It is terraform time and things are crazy. However some consistency is rewarded in points. We have 3 colony ships they have 20 pops total, but it could be split not equally. but only a bit not equally. 
+There are extra corporations and luxury good for extra points. 
+
+## The board
+We have 7x7 hex board. 
+The border of the board is already filled, we could terraform it later, each filled tile is resource(pattern) + color(climate). 
+There are 3 cities on board, they need to be at least 1 hex away from border, and 1 hex from each other, but could more. 
+
+### Cities bases
+There are 3 cities on board. We need to satisfy their needs with goods combination, they dont care about exact good, just focus. Dont care about climate. The resources could be in any order. 
+The patters:
+1) Hard Focus - AAA BBB, 2 resources around city, equal split. But could be any order. could be aaabbb or ababab or something else. Just 3 of each. 
+2) branching - AA BB CC, 3 resources of equal split, again could mix around. 
+3) Diversity - ABCDEF, all 6 resources. 
+
+### Colony ships
+There are 3 colony ships, each has 5-9 colonists. And each ship has favorite resource, and favorite climate. They will not repeat. We can play colonist on any tile which is not grayland. And it seals it. We cant terraform land after putting colonists, they may not survive it. 
+We can also place robots on tiles, which activates them to, but gives less points. Robots will not steal our jobs. Colonist from either ship could work any tile with favorite resource or favorite climate. 
+*Robots* : There is like 10 avaiable robots, which cost -1 score. And we can but dont have to deploy them. 
+
+### Resources
+There are 6 resources and they are crtical to satisfy needs of cities. Resources are visible with pattern. 
+Forest (triangles)  
+Grain (V)   
+Water (~)   
+Oxygen (oo) 
+Carbon (square)  
+Metal (stripes lines ////) 
+Exact symbols and patters doesnt matter, just different and visible. 
+
+### Climates
+Climates have color. Each tile should have climate (color) + resource (pattern) 
+Red Hot - Chilli
+Yellow Arid - Nuts
+Light Grain Plains - Orchids
+Dark Grain Temperete - Muschrooms
+Light Blue Cold - Berries
+Pink Artctic - caviar
+To activate tile we need put colonist or robot on it. If we do it we can no longer terraform. 
+The last word is name of luxury product from it. Space food, which has high demand as luxury food. 
+
+### Getting tiles and terraforming
+We have 3 tiles to choose from. Each have combination of collor+pattern. We can sack tile for new one for -1 score. We can place tile. And put colonist free, or robot -1. 
+
+If we place tile but it has no population yet we could put another tile, maybe better. But cant do it when it has pop, it is sealed from there. 
+Climate Change: We can alter placed tile without pops heat or cool down. It cost -1 for each step. It goes in order from Red Hot to Pink Artic. 
+
+### Placing lxuury food
+If we have 3 or more populated hexes tiles in triangle formation, we can place luxury good. It is on populated tiles, so we cant alter them anymore. And each good we can place only once. We get 10 points for that. 
+
+### Corporations 
+There are corporations in game, if we have some nice populated land we can sell it to corporations. But corporations needs to be placed of same resources land. 
+Corporations are also competitve, so if we have corporation class I on forest. And we place corporatons class III also on forest the first one will disappear and we will loose some points. 
+We cant place corporation lands on already corporate land, But we can place it on luxury good area. 
+*Corporations shapes* 
+Startup - 1 hex  
+Family Businss - 2 Hexes
+Old Money - 1-2 hexes pyramide. Or triangle hexes
+Join Venture - 22 hexes, romboid of 4 hexes in 22 formation. or 1-2-1 we can rotate them
+Megacorp - 2-3 hexes trapezoid, 2 up,3down or opposite we can rotate
+When we place corporation we get hex*10 points, but if compete out we loose 5*hexes score. 
+
+## Scoring:
+Start with 10, cant go negative. It is game over if we go negative. 
++1 Place colonist 
+-1 Place robot (10x)
+-1 Terraform climate 1 step
++10 satisfy city need, complete city 
++5 empty colony ship
++10+50 place company
+-5-20 outcompete company
++10 place luxury food. 
+
+
+
+
+
+
