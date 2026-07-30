@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TERRAFORM // THE VIBE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #080b12;
+    --bg2: #0d1220;
+    --panel: #111827;
+    --panel2: #161f33;
+    --line: #26324a;
+    --cyan: #57e0d0;
+    --cyan-dim: #2b6b64;
+    --amber: #f2b84b;
+    --bad: #e0483e;
+    --text: #dbe4f0;
+    --dim: #7a8aa6;
+
+    --c-hot: #e0483e;
+    --c-arid: #e8b339;
+    --c-plains: #b7d95a;
+    --c-temperate: #2f6b3a;
+    --c-cold: #6ec6e8;
+    --c-arctic: #e58fc4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;height:100%;}
+  h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
+  #app{display:flex;flex-wrap:wrap;gap:14px;padding:16px;max-width:1400px;margin:0 auto;}
+
+  .brand{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+  .brand h1{font-size:22px;letter-spacing:2px;margin:0;color:#fff;text-transform:uppercase;}
+  .brand span{color:var(--cyan);font-size:11px;letter-spacing:3px;text-transform:uppercase;}
+  .subtitle{color:var(--dim);font-size:11.5px;margin:2px 0 14px;letter-spacing:.5px;}
+
+  #boardCol{flex:1 1 560px;min-width:320px;}
+  #sideCol{flex:0 0 380px;min-width:320px;display:flex;flex-direction:column;gap:12px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .panel h3{margin:0 0 8px;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;font-weight:600;}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+  #canvasWrap{background:radial-gradient(ellipse at 50% 20%, #10182c 0%, #060911 70%);border:1px solid var(--line);border-radius:12px;padding:10px;position:relative;}
+  canvas{display:block;width:100%;height:auto;cursor:pointer;}
+
+  .score{font-size:34px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;}
+  .score.bad{color:var(--bad);}
+  .scorelabel{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+
+  .modebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .modebtn{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:7px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;transition:all .12s;}
+  .modebtn:hover{border-color:var(--cyan-dim);color:var(--text);}
+  .modebtn.active{background:var(--cyan);color:#04211d;border-color:var(--cyan);font-weight:700;}
+  .modebtn:disabled{opacity:.35;cursor:not-allowed;}
+
+  .tileopt{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel2);border:2px solid var(--line);border-radius:8px;padding:8px;cursor:pointer;flex:1;transition:all .12s;}
+  .tileopt.sel{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(87,224,208,.25);}
+  .tileopt svg{width:52px;height:52px;}
+  .tileopt .lbl{font-size:9.5px;color:var(--dim);text-align:center;line-height:1.3;}
+  .tilerow{display:flex;gap:8px;margin-bottom:8px;}
+
+  button.act{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:7px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.3px;}
+  button.act:hover{border-color:var(--cyan);}
+  button.act:disabled{opacity:.3;cursor:not-allowed;}
+  button.primary{background:var(--cyan);color:#04211d;border-color:var(--cyan);font-weight:700;}
+  button.danger{border-color:var(--bad);color:var(--bad);}
+
+  .cityline{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);}
+  .cityline:last-child{border-bottom:none;}
+  .citydot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
+  .cityname{font-size:12px;color:#fff;font-weight:600;min-width:64px;}
+  .cityneed{font-size:10.5px;color:var(--dim);flex:1;}
+  .citystatus{font-size:9.5px;padding:2px 7px;border-radius:20px;letter-spacing:.5px;}
+  .citystatus.pending{background:#2a3552;color:var(--dim);}
+  .citystatus.done{background:var(--cyan);color:#04211d;font-weight:700;}
+
+  .shipline{padding:7px 0;border-bottom:1px solid var(--line);}
+  .shipline:last-child{border-bottom:none;}
+  .shiptop{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+  .shipname{color:#fff;font-weight:600;}
+  .shipfav{display:flex;gap:6px;align-items:center;font-size:9.5px;color:var(--dim);margin-top:3px;}
+  .swatch{width:14px;height:14px;border-radius:3px;display:inline-block;}
+  .barbg{background:#1b2438;border-radius:4px;height:6px;margin-top:5px;overflow:hidden;}
+  .barfg{background:var(--cyan);height:100%;}
+  .shipline.empty .shiptop{color:var(--dim);}
+  .shipline.empty .shipname{color:var(--dim);text-decoration:line-through;}
+
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:10px;color:var(--dim);}
+  .legend .li{display:flex;align-items:center;gap:6px;}
+  .legend svg{width:18px;height:18px;}
+
+  #log{font-size:11px;color:var(--dim);max-height:120px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:4px;}
+  #log .e{border-left:2px solid var(--cyan-dim);padding-left:7px;}
+  #log .e.pos{border-color:var(--cyan);color:var(--text);}
+  #log .e.neg{border-color:var(--bad);color:#e79088;}
+
+  .hint{font-size:11px;color:var(--dim);line-height:1.5;margin-top:6px;}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:10px;color:var(--text);}
+  #gameover{position:fixed;inset:0;background:rgba(4,6,12,.88);display:none;align-items:center;justify-content:center;z-index:50;}
+  #gameover.show{display:flex;}
+  .goCard{background:var(--panel);border:1px solid var(--bad);border-radius:14px;padding:30px 40px;text-align:center;}
+  .goCard h2{color:var(--bad);font-size:26px;margin:0 0 8px;}
+  select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="boardCol">
+    <div class="brand"><h1>Terraform</h1><span>// the vibe</span></div>
+    <div class="subtitle">Colonize the hex. Feed the cities. Don't go broke.</div>
+
+    <div class="panel" style="margin-bottom:12px;">
+      <div class="row" style="justify-content:space-between;">
+        <div><div class="scorelabel">score</div><div class="score" id="scoreVal">10</div></div>
+        <div class="row" style="gap:16px;">
+          <div><div class="scorelabel">robots left</div><div class="pill" id="robotsVal">10</div></div>
+          <div><div class="scorelabel">turn</div><div class="pill" id="turnVal">1</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel modebar-wrap">
+      <h3>Action Mode</h3>
+      <div class="modebar" id="modebar"></div>
+      <div class="hint" id="modehint">Pick a tile on the right, then click an empty hex to place it.</div>
+    </div>
+
+    <div id="canvasWrap">
+      <canvas id="board" width="900" height="820"></canvas>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+      <h3>Resource / Climate Key</h3>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <div id="sideCol">
+
+    <div class="panel">
+      <h3>Terraform Tile Draw</h3>
+      <div class="tilerow" id="tileDraw"></div>
+      <div class="row">
+        <button class="act" id="discardBtn">Discard selected draw (-1)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Colony Ships</h3>
+      <div id="ships"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Cities</h3>
+      <div id="cities"></div>
+    </div>
+
+    <div class="panel" id="corpPanel">
+      <h3>Corporations</h3>
+      <div class="row">
+        <select id="corpClass">
+          <option value="1">Startup (1 hex)</option>
+          <option value="2">Family Business (2 hex)</option>
+          <option value="3">Old Money (3 hex)</option>
+          <option value="4">Joint Venture (4 hex)</option>
+          <option value="5">Megacorp (5 hex)</option>
+        </select>
+        <button class="act primary" id="confirmCorp" disabled>Place (0/1)</button>
+        <button class="act" id="cancelCorp">Cancel</button>
+      </div>
+      <div class="hint">Enter Corp mode, pick a class, then click adjacent populated hexes of one resource.</div>
+      <div id="corpList" class="hint"></div>
+    </div>
+
+    <div class="panel" id="luxPanel">
+      <h3>Luxury Goods</h3>
+      <div class="row">
+        <button class="act primary" id="confirmLux" disabled>Place Luxury (0/3)</button>
+        <button class="act" id="cancelLux">Cancel</button>
+      </div>
+      <div class="hint">Enter Luxury mode, then click 3 mutually-adjacent populated hexes.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Log</h3>
+      <div id="log"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="gameover">
+  <div class="goCard">
+    <h2>COLONY BANKRUPT</h2>
+    <div class="hint" style="margin-bottom:14px;">Score hit zero. The board falls silent.</div>
+    <button class="act primary" onclick="location.reload()">Restart</button>
+  </div>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+const RADIUS = 3;
+const RESOURCES = ['forest','grain','water','oxygen','carbon','metal'];
+const RESOURCE_LABEL = {forest:'Forest',grain:'Grain',water:'Water',oxygen:'Oxygen',carbon:'Carbon',metal:'Metal'};
+const CLIMATES = ['hot','arid','plains','temperate','cold','arctic']; // ordered for climate-change steps
+const CLIMATE_LABEL = {hot:'Red Hot',arid:'Yellow Arid',plains:'Light Plains',temperate:'Dark Temperate',cold:'Light Cold',arctic:'Pink Arctic'};
+const CLIMATE_LUX = {hot:'Chilli',arid:'Nuts',plains:'Orchids',temperate:'Mushrooms',cold:'Berries',arctic:'Caviar'};
+const CLIMATE_COLOR = {hot:'var(--c-hot)',arid:'var(--c-arid)',plains:'var(--c-plains)',temperate:'var(--c-temperate)',cold:'var(--c-cold)',arctic:'var(--c-arctic)'};
+const CLIMATE_HEX = {hot:'#e0483e',arid:'#e8b339',plains:'#b7d95a',temperate:'#2f6b3a',cold:'#6ec6e8',arctic:'#e58fc4'};
+const CORP_CLASS = {1:{name:'Startup',n:1},2:{name:'Family Business',n:2},3:{name:'Old Money',n:3},4:{name:'Joint Venture',n:4},5:{name:'Megacorp',n:5}};
+
+function rand(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function hexDist(q1,r1,q2,r2){ return (Math.abs(q1-q2)+Math.abs(r1-r2)+Math.abs((q1+r1)-(q2+r2)))/2; }
+const DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+
+/* ======================= STATE ======================= */
+let state = {
+  score: 10,
+  turn: 1,
+  robotsLeft: 10,
+  tiles: {},          // key "q,r" -> tile object
+  cityHexes: [],       // [{q,r,pattern,favs:[...],done:false}]
+  ships: [],
+  draw: [],           // 3 tile options {resource,climate}
+  selectedDraw: null,
+  mode: 'place',       // place | colonist | robot | climate | luxury | corp
+  colonistShip: null,
+  corpClickSet: [],
+  luxClickSet: [],
+  gameOver:false,
+};
+
+function key(q,r){return q+','+r;}
+
+/* ======================= BOARD INIT ======================= */
+function buildBoard(){
+  state.tiles = {};
+  for(let q=-RADIUS;q<=RADIUS;q++){
+    for(let r=-RADIUS;r<=RADIUS;r++){
+      const s = -q-r;
+      if(Math.max(Math.abs(q),Math.abs(r),Math.abs(s))>RADIUS) continue;
+      const dist = hexDist(0,0,q,r);
+      const isBorder = dist===RADIUS;
+      state.tiles[key(q,r)] = {
+        q,r,
+        resource: isBorder? rand(RESOURCES): null,
+        climate: isBorder? rand(CLIMATES): null,
+        filled: isBorder,
+        pop: null,        // {type:'colonist',ship:idx} | {type:'robot'}
+        isCity: false,
+        cityIdx: null,
+        corp: null,        // {resource, cls}
+        luxury: false,
+      };
+    }
+  }
+  // place 3 cities on a rotated alternating triple of the ring-1 neighbors of center
+  const rot = Math.floor(Math.random()*6);
+  const ring1 = [];
+  for(let i=0;i<6;i++){
+    const d = DIRS[(i+rot)%6];
+    ring1.push([d[0],d[1]]);
+  }
+  const cityPos = [ring1[0],ring1[2],ring1[4]];
+  const patterns = shuffle(['hard','branch','diverse']);
+  state.cityHexes = cityPos.map((p,i)=>{
+    const t = state.tiles[key(p[0],p[1])];
+    t.isCity = true; t.cityIdx = i;
+    const pattern = patterns[i];
+    let favs = [];
+    const pool = shuffle(RESOURCES.slice());
+    if(pattern==='hard') favs = pool.slice(0,2);
+    else if(pattern==='branch') favs = pool.slice(0,3);
+    else favs = RESOURCES.slice();
+    return {q:p[0], r:p[1], pattern, favs, done:false};
+  });
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function neighbors(q,r){
+  return DIRS.map(d=>[q+d[0],r+d[1]]).filter(([nq,nr])=>state.tiles[key(nq,nr)]);
+}
+
+/* ======================= SHIPS ======================= */
+function buildShips(){
+  // 3 ships, total 20 pop, each between 5-9, "only a bit unequal"
+  const splits = [[7,7,6],[6,7,7],[7,6,7],[8,6,6],[6,6,8],[6,8,6],[7,8,5],[5,8,7]];
+  const pops = shuffle(splits.slice())[0];
+  const favResources = shuffle(RESOURCES.slice()).slice(0,3);
+  const favClimates = shuffle(CLIMATES.slice()).slice(0,3);
+  const names = ['ARK-1 Meridian','ARK-2 Solace','ARK-3 Vantage'];
+  state.ships = pops.map((p,i)=>({
+    name: names[i], total:p, remaining:p,
+    favResource: favResources[i], favClimate: favClimates[i],
+    emptiedBonus:false
+  }));
+}
+
+/* ======================= TILE DRAW ======================= */
+function refillDraw(){
+  while(state.draw.length<3){
+    state.draw.push({resource: rand(RESOURCES), climate: rand(CLIMATES)});
+  }
+  state.selectedDraw = state.selectedDraw===null && state.draw.length? 0 : state.selectedDraw;
+}
+
+/* ======================= SCORING HELPERS ======================= */
+function canAfford(cost){ return state.score - cost >= 0; }
+function addScore(delta, msg){
+  state.score += delta;
+  if(state.score<0) state.score = 0;
+  logMsg(msg, delta);
+  if(state.score<=0){
+    state.gameOver = true;
+  }
+}
+function logMsg(msg, delta){
+  const el = document.createElement('div');
+  el.className = 'e ' + (delta>0?'pos':delta<0?'neg':'');
+  const sign = delta>0? '+'+delta : delta<0? String(delta) : '';
+  el.textContent = (sign? '['+sign+'] ':'') + msg;
+  document.getElementById('log').appendChild(el);
+}
+
+/* ======================= GAME ACTIONS ======================= */
+function placeTileAt(q,r){
+  const t = state.tiles[key(q,r)];
+  if(!t || t.isCity || t.pop) return;
+  const chosen = state.draw[state.selectedDraw];
+  if(!chosen) return;
+  const isReplace = t.filled;
+  if(isReplace){
+    if(!canAfford(1)){ flashHint('Not enough score to re-terraform this tile.'); return; }
+  }
+  t.resource = chosen.resource;
+  t.climate = chosen.climate;
+  t.filled = true;
+  if(isReplace) addScore(-1, `Re-terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`);
+  else logMsg(`Terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`, 0);
+  state.draw.splice(state.selectedDraw,1);
+  state.selectedDraw = null;
+  refillDraw();
+  state.turn++;
+  checkCities();
+  render();
+}
+
+function discardSelectedDraw(){
+  if(state.selectedDraw===null) return;
+  if(!canAfford(1)){ flashHint('Not enough score to discard.'); return; }
+  addScore(-1, 'Discarded a draw tile for a new one');
+  state.draw.splice(state.selectedDraw,1);
+  state.selectedDraw = null;
+  refillDraw();
+  render();
+}
+
+function placeColonistAt(q,r){
+  const t = state.tiles[key(q,r)];
+  const shipIdx = state.colonistShip;
+  if(shipIdx===null || !t || t.isCity || t.pop || !t.filled) return;
+  const ship = state.ships[shipIdx];
+  if(ship.remaining<=0) return;
+  const matches = t.resource===ship.favResource || t.climate===ship.favClimate;
+  if(!matches){ flashHint(`${ship.name} colonists only settle ${RESOURCE_LABEL[ship.favResource]} or ${CLIMATE_LABEL[ship.favClimate]} tiles.`); return; }
+  t.pop = {type:'colonist', ship: shipIdx};
+  ship.remaining--;
+  addScore(1, `Colonist from ${ship.name} settled (${q},${r})`);
+  if(ship.remaining===0 && !ship.emptiedBonus){
+    ship.emptiedBonus = true;
+    addScore(5, `${ship.name} fully disembarked - bonus`);
+  }
+  checkCities();
+  render();
+}
+
+function placeRobotAt(q,r){
+  const t = state.tiles[key(q,r)];
+  if(!t || t.isCity || t.pop || !t.filled) return;
+  if(state.robotsLeft<=0){ flashHint('No robots left in the depot.'); return; }
+  if(!canAfford(1)){ flashHint('Not enough score to deploy a robot.'); return; }
+  t.pop = {type:'robot'};
+  state.robotsLeft--;
+  addScore(-1, `Robot deployed on (${q},${r})`);
+  checkCities();
+  render();
+}
+
+function climateStep(q,r,dir){
+  const t = state.tiles[key(q,r)];
+  if(!t || !t.filled || t.pop) return;
+  const idx = CLIMATES.indexOf(t.climate);
+  const next = idx+dir;
+  if(next<0 || next>=CLIMATES.length) return;
+  if(!canAfford(1)){ flashHint('Not enough score to shift climate.'); return; }
+  t.climate = CLIMATES[next];
+  addScore(-1, `Climate shifted on (${q},${r}) -> ${CLIMATE_LABEL[t.climate]}`);
+  checkCities();
+  render();
+}
+
+/* ---- Cities ---- */
+function checkCities(){
+  state.cityHexes.forEach(city=>{
+    if(city.done) return;
+    const ns = neighbors(city.q, city.r);
+    const counts = {};
+    let allFilled = true;
+    ns.forEach(([q,r])=>{
+      const t = state.tiles[key(q,r)];
+      if(!t.filled){ allFilled=false; return; }
+      counts[t.resource] = (counts[t.resource]||0)+1;
+    });
+    if(!allFilled || ns.length<6) return;
+    let satisfied = false;
+    const vals = Object.values(counts).sort((a,b)=>b-a);
+    const kinds = Object.keys(counts).length;
+    if(city.pattern==='hard') satisfied = kinds===2 && vals[0]===3 && vals[1]===3;
+    else if(city.pattern==='branch') satisfied = kinds===3 && vals.every(v=>v===2);
+    else if(city.pattern==='diverse') satisfied = kinds===6 && vals.every(v=>v===1);
+    if(satisfied){
+      city.done = true;
+      addScore(10, `City "${cityName(city)}" satisfied! (${patternLabel(city.pattern)})`);
+    }
+  });
+}
+function cityName(city){ return ['NEW HELIOS','KAPPA STATION','ARCADIA'][city.q!==undefined? state.cityHexes.indexOf(city):0]; }
+function patternLabel(p){ return p==='hard'?'Hard Focus': p==='branch'?'Branching':'Diversity'; }
+
+/* ---- Luxury ---- */
+function tryConfirmLux(){
+  if(state.luxClickSet.length!==3) return;
+  const pts = state.luxClickSet;
+  // must be mutually adjacent (triangle) and populated and not already luxury
+  for(let i=0;i<3;i++){
+    const t = state.tiles[key(pts[i][0],pts[i][1])];
+    if(!t || !t.pop || t.luxury) return;
+  }
+  for(let i=0;i<3;i++) for(let j=i+1;j<3;j++){
+    if(hexDist(pts[i][0],pts[i][1],pts[j][0],pts[j][1])!==1) return;
+  }
+  pts.forEach(([q,r])=>{ state.tiles[key(q,r)].luxury = true; });
+  addScore(10, 'Luxury good placed on a populated triangle');
+  state.luxClickSet = [];
+  setMode('place');
+  render();
+}
+
+/* ---- Corporations ---- */
+function tryConfirmCorp(){
+  const cls = parseInt(document.getElementById('corpClass').value,10);
+  const need = CORP_CLASS[cls].n;
+  if(state.corpClickSet.length!==need) return;
+  const pts = state.corpClickSet;
+  const res = state.tiles[key(pts[0][0],pts[0][1])].resource;
+  for(const [q,r] of pts){
+    const t = state.tiles[key(q,r)];
+    if(!t.pop || t.resource!==res) return;
+  }
+  // adjacency: connected group
+  if(!isConnected(pts)) return;
+  // resolve competition: existing corp on same resource elsewhere gets removed
+  let lostPts = [];
+  Object.values(state.tiles).forEach(t=>{
+    if(t.corp && t.corp.resource===res){
+      lostPts.push(t);
+    }
+  });
+  if(lostPts.length){
+    const oldHexes = lostPts.length;
+    lostPts.forEach(t=>t.corp=null);
+    addScore(-5*oldHexes, `Existing ${RESOURCE_LABEL[res]} corp outcompeted (${oldHexes} hex)`);
+  }
+  pts.forEach(([q,r])=>{ state.tiles[key(q,r)].corp = {resource:res, cls}; });
+  addScore(10*need, `${CORP_CLASS[cls].name} corp founded on ${RESOURCE_LABEL[res]} (${need} hex)`);
+  state.corpClickSet = [];
+  setMode('place');
+  render();
+}
+function isConnected(pts){
+  if(pts.length===1) return true;
+  const set = new Set(pts.map(p=>p.join(',')));
+  const seen = new Set();
+  const stack = [pts[0]];
+  seen.add(pts[0].join(','));
+  while(stack.length){
+    const [q,r] = stack.pop();
+    for(const d of DIRS){
+      const nk = (q+d[0])+','+(r+d[1]);
+      if(set.has(nk) && !seen.has(nk)){ seen.add(nk); stack.push([q+d[0],r+d[1]]); }
+    }
+  }
+  return seen.size===pts.length;
+}
+
+/* ======================= RENDER ======================= */
+const SIZE = 44; // hex radius in px
+function axialToPixel(q,r){
+  const x = SIZE*Math.sqrt(3)*(q + r/2);
+  const y = SIZE*1.5*r;
+  return [x,y];
+}
+function hexCorners(cx,cy,size){
+  const pts=[];
+  for(let i=0;i<6;i++){
+    const ang = Math.PI/180*(60*i - 30);
+    pts.push([cx+size*Math.cos(ang), cy+size*Math.sin(ang)]);
+  }
+  return pts;
+}
+
+function resourcePattern(ctx,cx,cy,size,resource,color){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+  const s = size*0.5;
+  switch(resource){
+    case 'forest': // triangles
+      for(let i=-1;i<=1;i++){
+        ctx.beginPath();
+        ctx.moveTo(cx+i*s*0.55, cy-s*0.5);
+        ctx.lineTo(cx+i*s*0.55-s*0.22, cy+s*0.22);
+        ctx.lineTo(cx+i*s*0.55+s*0.22, cy+s*0.22);
+        ctx.closePath(); ctx.fill();
+      }
+      break;
+    case 'grain': // V chevrons
+      for(let i=-1;i<=1;i++){
+        ctx.beginPath();
+        ctx.moveTo(cx+i*s*0.55-s*0.18, cy-s*0.25);
+        ctx.lineTo(cx+i*s*0.55, cy+s*0.25);
+        ctx.lineTo(cx+i*s*0.55+s*0.18, cy-s*0.25);
+        ctx.stroke();
+      }
+      break;
+    case 'water': // waves
+      for(let row=-1;row<=1;row++){
+        ctx.beginPath();
+        const yy = cy+row*s*0.35;
+        ctx.moveTo(cx-s*0.5, yy);
+        ctx.quadraticCurveTo(cx-s*0.25, yy-s*0.18, cx, yy);
+        ctx.quadraticCurveTo(cx+s*0.25, yy+s*0.18, cx+s*0.5, yy);
+        ctx.stroke();
+      }
+      break;
+    case 'oxygen': // oo circles
+      [[-s*0.28,0],[s*0.28,0]].forEach(([dx,dy])=>{
+        ctx.beginPath(); ctx.arc(cx+dx,cy+dy,s*0.2,0,Math.PI*2); ctx.stroke();
+      });
+      break;
+    case 'carbon': // squares grid
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy])=>{
+        ctx.strokeRect(cx+dx*s*0.28-s*0.14, cy+dy*s*0.28-s*0.14, s*0.28, s*0.28);
+      });
+      break;
+    case 'metal': // diagonal stripes
+      for(let i=-2;i<=2;i++){
+        ctx.beginPath();
+        ctx.moveTo(cx-s*0.55+i*s*0.22, cy+s*0.55);
+        ctx.lineTo(cx-s*0.55+i*s*0.22+s*0.35, cy-s*0.55);
+        ctx.stroke();
+      }
+      break;
+  }
+  ctx.restore();
+}
+
+function draw(){
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cx0 = canvas.width/2, cy0 = canvas.height/2;
+
+  Object.values(state.tiles).forEach(t=>{
+    const [px,py] = axialToPixel(t.q,t.r);
+    const cx = cx0+px, cy = cy0+py;
+    const corners = hexCorners(cx,cy,SIZE-2);
+    ctx.beginPath();
+    corners.forEach(([x,y],i)=> i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+    ctx.closePath();
+
+    let fill = '#141c2e';
+    if(t.isCity) fill = '#232a3d';
+    else if(t.filled) fill = CLIMATE_HEX[t.climate] + '33';
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    ctx.lineWidth = t.isCity? 2.5 : 1.2;
+    ctx.strokeStyle = t.isCity? '#8fb8ff' : (t.filled? CLIMATE_HEX[t.climate]+'aa' : '#2a344c');
+    ctx.stroke();
+
+    if(t.isCity){
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.font = '700 11px Space Grotesk';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      const cityIdx = t.cityIdx;
+      ctx.fillText(['I','II','III'][cityIdx], cx, cy-6);
+      ctx.font='9px JetBrains Mono';
+      ctx.fillStyle='#9fb0cc';
+      ctx.fillText(patternLabel(state.cityHexes[cityIdx].pattern).slice(0,4), cx, cy+9);
+      ctx.restore();
+    } else if(t.filled){
+      resourcePattern(ctx, cx, cy, SIZE, t.resource, CLIMATE_HEX[t.climate]);
+      if(t.pop){
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy-SIZE*0.62, 8, 0, Math.PI*2);
+        ctx.fillStyle = t.pop.type==='robot'? '#9aa6bd' : '#fff';
+        ctx.fill();
+        ctx.strokeStyle='#04070c'; ctx.lineWidth=1.3; ctx.stroke();
+        ctx.fillStyle = t.pop.type==='robot'? '#20242c':'#333';
+        ctx.font='9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(t.pop.type==='robot'?'R':'C', cx, cy-SIZE*0.62+0.5);
+        ctx.restore();
+      }
+      if(t.corp){
+        ctx.save();
+        ctx.strokeStyle='#f2b84b'; ctx.lineWidth=2.4;
+        ctx.beginPath();
+        corners.forEach(([x,y],i)=> i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+        ctx.closePath(); ctx.stroke();
+        ctx.restore();
+      }
+      if(t.luxury){
+        ctx.save();
+        ctx.fillStyle='#f2b84b';
+        ctx.beginPath(); ctx.arc(cx+SIZE*0.55, cy-SIZE*0.55, 6,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // highlight for selection modes
+    if(isSelectable(t.q,t.r)){
+      ctx.save();
+      ctx.lineWidth=2.5; ctx.strokeStyle = 'rgba(87,224,208,.8)';
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      corners.forEach(([x,y],i)=> i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+      ctx.closePath(); ctx.stroke();
+      ctx.restore();
+    }
+    if(isClickedForMultiSelect(t.q,t.r)){
+      ctx.save();
+      ctx.fillStyle='rgba(242,184,75,.35)';
+      ctx.beginPath();
+      corners.forEach(([x,y],i)=> i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  });
+}
+
+function isSelectable(q,r){
+  const t = state.tiles[key(q,r)];
+  if(!t || t.isCity) return false;
+  if(state.mode==='place') return !t.pop && state.selectedDraw!==null;
+  if(state.mode==='colonist') return t.filled && !t.pop && state.colonistShip!==null;
+  if(state.mode==='robot') return t.filled && !t.pop;
+  if(state.mode==='climate') return t.filled && !t.pop;
+  if(state.mode==='luxury') return t.pop && !t.luxury && !isInSet(state.luxClickSet,q,r);
+  if(state.mode==='corp') return t.pop && !isInSet(state.corpClickSet,q,r);
+  return false;
+}
+function isClickedForMultiSelect(q,r){
+  if(state.mode==='luxury') return isInSet(state.luxClickSet,q,r);
+  if(state.mode==='corp') return isInSet(state.corpClickSet,q,r);
+  return false;
+}
+function isInSet(set,q,r){ return set.some(p=>p[0]===q&&p[1]===r); }
+
+/* ======================= UI BUILD ======================= */
+const MODES = [
+  {id:'place', label:'Terraform'},
+  {id:'colonist', label:'Colonist'},
+  {id:'robot', label:'Robot'},
+  {id:'climate', label:'Climate Shift'},
+  {id:'luxury', label:'Luxury'},
+  {id:'corp', label:'Corporation'},
+];
+const MODE_HINT = {
+  place: 'Pick a tile on the right, then click an empty hex to place it. Clicking an already-terraformed unpopulated hex re-terraforms it for -1.',
+  colonist: 'Pick a ship below, then click a terraformed hex matching its favorite resource or climate.',
+  robot: 'Click any terraformed, unpopulated hex to deploy a robot for -1 score.',
+  climate: 'Click a terraformed, unpopulated hex, then use the +/- buttons that appear to shift its climate for -1 each step.',
+  luxury: 'Click 3 mutually-adjacent populated hexes to form a luxury triangle, then confirm for +10.',
+  corp: 'Choose a corporation class, then click that many adjacent populated hexes of the same resource.',
+};
+
+function setMode(m){
+  state.mode = m;
+  state.colonistShip = null;
+  state.corpClickSet = [];
+  state.luxClickSet = [];
+  document.getElementById('modehint').textContent = MODE_HINT[m];
+  renderModebar();
+  renderShips();
+  updateCorpUI();
+  updateLuxUI();
+  render();
+}
+
+function renderModebar(){
+  const bar = document.getElementById('modebar');
+  bar.innerHTML='';
+  MODES.forEach(m=>{
+    const b = document.createElement('button');
+    b.className = 'modebtn' + (state.mode===m.id?' active':'');
+    b.textContent = m.label;
+    b.onclick = ()=> setMode(m.id);
+    bar.appendChild(b);
+  });
+}
+
+function renderTileDraw(){
+  const wrap = document.getElementById('tileDraw');
+  wrap.innerHTML='';
+  state.draw.forEach((d,i)=>{
+    const div = document.createElement('div');
+    div.className = 'tileopt' + (state.selectedDraw===i?' sel':'');
+    div.innerHTML = `<svg viewBox="0 0 52 52"></svg><div class="lbl">${RESOURCE_LABEL[d.resource]}<br>${CLIMATE_LABEL[d.climate]}</div>`;
+    div.onclick = ()=>{ state.selectedDraw=i; setMode('place'); render(); renderTileDraw(); };
+    wrap.appendChild(div);
+    drawMiniSvg(div.querySelector('svg'), d.resource, CLIMATE_HEX[d.climate]);
+  });
+}
+function drawMiniSvg(svg, resource, color){
+  svg.style.background = color+'22';
+  svg.style.borderRadius = '6px';
+  const ns = 'http://www.w3.org/2000/svg';
+  function el(name, attrs){ const e = document.createElementNS(ns,name); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+  const cx=26, cy=26;
+  if(resource==='forest'){
+    for(let i=-1;i<=1;i++){
+      svg.appendChild(el('polygon',{points:`${cx+i*11},${cy-9} ${cx+i*11-6},${cy+7} ${cx+i*11+6},${cy+7}`, fill:color}));
+    }
+  } else if(resource==='grain'){
+    for(let i=-1;i<=1;i++){
+      svg.appendChild(el('polyline',{points:`${cx+i*11-5},${cy-6} ${cx+i*11},${cy+7} ${cx+i*11+5},${cy-6}`, fill:'none',stroke:color,'stroke-width':2}));
+    }
+  } else if(resource==='water'){
+    for(let row=-1;row<=1;row++){
+      const yy = cy+row*9;
+      svg.appendChild(el('path',{d:`M ${cx-13} ${yy} Q ${cx-6} ${yy-5} ${cx} ${yy} Q ${cx+6} ${yy+5} ${cx+13} ${yy}`, fill:'none',stroke:color,'stroke-width':2}));
+    }
+  } else if(resource==='oxygen'){
+    svg.appendChild(el('circle',{cx:cx-8,cy:cy,r:6,fill:'none',stroke:color,'stroke-width':2}));
+    svg.appendChild(el('circle',{cx:cx+8,cy:cy,r:6,fill:'none',stroke:color,'stroke-width':2}));
+  } else if(resource==='carbon'){
+    [[-8,-8],[8,-8],[-8,8],[8,8]].forEach(([dx,dy])=>{
+      svg.appendChild(el('rect',{x:cx+dx-6,y:cy+dy-6,width:12,height:12,fill:'none',stroke:color,'stroke-width':1.8}));
+    });
+  } else if(resource==='metal'){
+    for(let i=-2;i<=2;i++){
+      svg.appendChild(el('line',{x1:cx-16+i*8,y1:cy+16,x2:cx-16+i*8+10,y2:cy-16,stroke:color,'stroke-width':2}));
+    }
+  }
+}
+
+function renderShips(){
+  const wrap = document.getElementById('ships');
+  wrap.innerHTML='';
+  state.ships.forEach((s,i)=>{
+    const div = document.createElement('div');
+    div.className = 'shipline' + (s.remaining===0?' empty':'') + (state.mode==='colonist' && state.colonistShip===i?' sel':'');
+    div.style.cursor = (state.mode==='colonist' && s.remaining>0)? 'pointer':'default';
+    div.innerHTML = `
+      <div class="shiptop"><span class="shipname">${s.name}</span><span>${s.remaining}/${s.total}</span></div>
+      <div class="shipfav">
+        <span class="swatch" style="background:${CLIMATE_HEX[s.favClimate]}"></span> favors ${RESOURCE_LABEL[s.favResource]} or ${CLIMATE_LABEL[s.favClimate]}
+      </div>
+      <div class="barbg"><div class="barfg" style="width:${(s.remaining/s.total*100)}%"></div></div>
+    `;
+    if(state.mode==='colonist' && s.remaining>0){
+      div.onclick = ()=>{ state.colonistShip = i; renderShips(); render(); };
+      if(state.colonistShip===i) div.style.outline='2px solid var(--cyan)';
+    }
+    wrap.appendChild(div);
+  });
+}
+
+function renderCities(){
+  const wrap = document.getElementById('cities');
+  wrap.innerHTML='';
+  const names = ['NEW HELIOS','KAPPA STATION','ARCADIA'];
+  state.cityHexes.forEach((c,i)=>{
+    const div = document.createElement('div');
+    div.className = 'cityline';
+    let needTxt = '';
+    if(c.pattern==='hard') needTxt = `2 resources, 3+3 (any order) from: ${c.favs.map(f=>RESOURCE_LABEL[f]).join(' / ')}`;
+    else if(c.pattern==='branch') needTxt = `3 resources, 2+2+2 (any order) from: ${c.favs.map(f=>RESOURCE_LABEL[f]).join(' / ')}`;
+    else needTxt = `all 6 resources, once each`;
+    div.innerHTML = `
+      <div class="citydot" style="background:#8fb8ff"></div>
+      <div style="flex:1;">
+        <div class="cityname">${names[i]}</div>
+        <div class="cityneed">${patternLabel(c.pattern)}: ${needTxt}</div>
+      </div>
+      <div class="citystatus ${c.done?'done':'pending'}">${c.done?'FED':'NEEDY'}</div>
+    `;
+    wrap.appendChild(div);
+  });
+}
+
+function renderLegend(){
+  const wrap = document.getElementById('legend');
+  wrap.innerHTML='';
+  RESOURCES.forEach(res=>{
+    const div = document.createElement('div');
+    div.className='li';
+    div.innerHTML = `<svg viewBox="0 0 52 52"></svg><span>${RESOURCE_LABEL[res]}</span>`;
+    drawMiniSvg(div.querySelector('svg'), res, '#9fb0cc');
+    wrap.appendChild(div);
+  });
+  CLIMATES.forEach(c=>{
+    const div = document.createElement('div');
+    div.className='li';
+    div.innerHTML = `<span class="swatch" style="background:${CLIMATE_HEX[c]}"></span><span>${CLIMATE_LABEL[c]} <em style="color:var(--dim)">(${CLIMATE_LUX[c]})</em></span>`;
+    wrap.appendChild(div);
+  });
+}
+
+function updateCorpUI(){
+  const cls = parseInt(document.getElementById('corpClass').value,10);
+  const need = CORP_CLASS[cls].n;
+  const btn = document.getElementById('confirmCorp');
+  btn.textContent = `Place (${state.corpClickSet.length}/${need})`;
+  btn.disabled = state.corpClickSet.length!==need || state.mode!=='corp';
+  const list = document.getElementById('corpList');
+  const active = {};
+  Object.values(state.tiles).forEach(t=>{ if(t.corp) active[t.corp.resource]=(active[t.corp.resource]||0); });
+  const summary = {};
+  Object.values(state.tiles).forEach(t=>{ if(t.corp){ summary[t.corp.resource]=summary[t.corp.resource]||{cls:t.corp.cls,n:0}; summary[t.corp.resource].n++; } });
+  list.innerHTML = Object.keys(summary).length? 'Active: '+Object.entries(summary).map(([res,v])=>`${RESOURCE_LABEL[res]} (${CORP_CLASS[v.cls].name})`).join(', ') : 'No active corporations yet.';
+}
+function updateLuxUI(){
+  const btn = document.getElementById('confirmLux');
+  btn.textContent = `Place Luxury (${state.luxClickSet.length}/3)`;
+  btn.disabled = state.luxClickSet.length!==3 || state.mode!=='luxury';
+}
+
+function flashHint(msg){
+  const el = document.getElementById('modehint');
+  const old = el.textContent;
+  el.style.color = 'var(--bad)';
+  el.textContent = msg;
+  setTimeout(()=>{ el.style.color=''; el.textContent = MODE_HINT[state.mode]; }, 1800);
+}
+
+function render(){
+  document.getElementById('scoreVal').textContent = state.score;
+  document.getElementById('scoreVal').className = 'score' + (state.score<=3?' bad':'');
+  document.getElementById('robotsVal').textContent = state.robotsLeft;
+  document.getElementById('turnVal').textContent = state.turn;
+  renderTileDraw();
+  renderShips();
+  renderCities();
+  updateCorpUI();
+  updateLuxUI();
+  draw();
+  document.getElementById('discardBtn').disabled = state.selectedDraw===null || state.score<1;
+  if(state.gameOver) document.getElementById('gameover').classList.add('show');
+}
+
+/* ======================= INPUT ======================= */
+function pixelToAxial(x,y){
+  // inverse of axialToPixel
+  const r = y/(SIZE*1.5);
+  const q = x/(SIZE*Math.sqrt(3)) - r/2;
+  return roundAxial(q,r);
+}
+function roundAxial(q,r){
+  let x=q,z=r,y=-x-z;
+  let rx=Math.round(x), ry=Math.round(y), rz=Math.round(z);
+  const xd=Math.abs(rx-x), yd=Math.abs(ry-y), zd=Math.abs(rz-z);
+  if(xd>yd && xd>zd) rx=-ry-rz;
+  else if(yd>zd) ry=-rx-rz;
+  else rz=-rx-ry;
+  return [rx,rz];
+}
+
+document.getElementById('board').addEventListener('click', (e)=>{
+  if(state.gameOver) return;
+  const canvas = e.target;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  const x = (e.clientX-rect.left)*scaleX - canvas.width/2;
+  const y = (e.clientY-rect.top)*scaleY - canvas.height/2;
+  const [q,r] = pixelToAxial(x,y);
+  const t = state.tiles[key(q,r)];
+  if(!t) return;
+  handleHexClick(q,r);
+});
+
+let climatePopup = null;
+function handleHexClick(q,r){
+  const t = state.tiles[key(q,r)];
+  if(t.isCity) return;
+  if(state.mode==='place'){
+    if(state.selectedDraw===null){ flashHint('Select a tile from the draw first.'); return; }
+    placeTileAt(q,r);
+  } else if(state.mode==='colonist'){
+    if(state.colonistShip===null){ flashHint('Select a ship first.'); return; }
+    placeColonistAt(q,r);
+  } else if(state.mode==='robot'){
+    placeRobotAt(q,r);
+  } else if(state.mode==='climate'){
+    if(!t.filled || t.pop) return;
+    showClimatePopup(q,r);
+  } else if(state.mode==='luxury'){
+    if(!t.pop || t.luxury) return;
+    if(isInSet(state.luxClickSet,q,r)) state.luxClickSet = state.luxClickSet.filter(p=>!(p[0]===q&&p[1]===r));
+    else if(state.luxClickSet.length<3) state.luxClickSet.push([q,r]);
+    updateLuxUI(); render();
+  } else if(state.mode==='corp'){
+    if(!t.pop) return;
+    const cls = parseInt(document.getElementById('corpClass').value,10);
+    const need = CORP_CLASS[cls].n;
+    if(isInSet(state.corpClickSet,q,r)) state.corpClickSet = state.corpClickSet.filter(p=>!(p[0]===q&&p[1]===r));
+    else if(state.corpClickSet.length<need) state.corpClickSet.push([q,r]);
+    updateCorpUI(); render();
+  }
+}
+
+function showClimatePopup(q,r){
+  const t = state.tiles[key(q,r)];
+  const goUp = confirm(`Hex (${q},${r}) is ${CLIMATE_LABEL[t.climate]}.\nOK = shift toward Pink Arctic (-1)\nCancel = shift toward Red Hot (-1)\n(Close/Escape to do nothing)`);
+  climateStepFromDialog(q,r,goUp);
+}
+function climateStepFromDialog(q,r,goUp){
+  climateStep(q,r, goUp? 1 : -1);
+}
+
+document.getElementById('discardBtn').onclick = discardSelectedDraw;
+document.getElementById('corpClass').onchange = ()=>{ state.corpClickSet=[]; updateCorpUI(); render(); };
+document.getElementById('confirmCorp').onclick = tryConfirmCorp;
+document.getElementById('cancelCorp').onclick = ()=>{ state.corpClickSet=[]; updateCorpUI(); render(); };
+document.getElementById('confirmLux').onclick = tryConfirmLux;
+document.getElementById('cancelLux').onclick = ()=>{ state.luxClickSet=[]; updateLuxUI(); render(); };
+
+/* ======================= INIT ======================= */
+function init(){
+  buildBoard();
+  buildShips();
+  refillDraw();
+  state.selectedDraw = 0;
+  renderModebar();
+  renderLegend();
+  logMsg('Colony ships in orbit. Board scanned. Begin terraforming.', 0);
+  render();
+}
+init();
+</script>
+</body>
+</html>
