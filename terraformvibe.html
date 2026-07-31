@@ -104,6 +104,19 @@
   #gameover.show{display:flex;}
   .goCard{background:var(--panel);border:1px solid var(--bad);border-radius:14px;padding:30px 40px;text-align:center;}
   .goCard h2{color:var(--bad);font-size:26px;margin:0 0 8px;}
+  #gameover{position:fixed;inset:0;background:rgba(4,6,12,.88);display:none;align-items:center;justify-content:center;z-index:50;}
+  #gameover.show{display:flex;}
+  .goCard{background:var(--panel);border:1px solid var(--bad);border-radius:14px;padding:30px 40px;text-align:center;}
+  .goCard h2{color:var(--bad);font-size:26px;margin:0 0 8px;}
+  #gamewon{position:fixed;inset:0;background:rgba(4,6,12,.88);display:none;align-items:center;justify-content:center;z-index:50;}
+  #gamewon.show{display:flex;}
+  .winCard{background:var(--panel);border:1px solid var(--amber);border-radius:14px;padding:34px 44px;text-align:center;max-width:440px;}
+  .winCard h2{color:var(--amber);font-size:24px;margin:0 0 12px;letter-spacing:1px;}
+  .winCard p{color:var(--text);font-size:12.5px;line-height:1.7;text-align:left;font-family:'JetBrains Mono',monospace;}
+  .winCard .sig{color:var(--dim);font-size:11px;margin-top:10px;text-align:right;font-style:italic;}
+  #hoverBanner{font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:18px;}
+  #hoverBanner .tag{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:11px;}
+  #hoverBanner .swatchsm{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:middle;}
   select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
 </style>
 </head>
@@ -120,6 +133,7 @@
         <div class="row" style="gap:16px;">
           <div><div class="scorelabel">robots left</div><div class="pill" id="robotsVal">10</div></div>
           <div><div class="scorelabel">turn</div><div class="pill" id="turnVal">1</div></div>
+          <div><div class="scorelabel">win at</div><div class="pill" id="winTargetVal">100</div></div>
         </div>
       </div>
     </div>
@@ -128,6 +142,10 @@
       <h3>Action Mode</h3>
       <div class="modebar" id="modebar"></div>
       <div class="hint" id="modehint">Pick a tile on the right, then click an empty hex to place it.</div>
+    </div>
+
+    <div class="panel" id="hoverPanel" style="padding:9px 14px;margin-bottom:0;">
+      <div id="hoverBanner">Hover a hex to inspect it.</div>
     </div>
 
     <div id="canvasWrap">
@@ -148,6 +166,7 @@
       <div class="row">
         <button class="act" id="discardBtn">Discard selected draw (-1)</button>
       </div>
+      <div class="hint">Placing a drawn tile costs -1 (whether the hex was empty or already terraformed).</div>
     </div>
 
     <div class="panel">
@@ -158,6 +177,14 @@
     <div class="panel">
       <h3>Cities</h3>
       <div id="cities"></div>
+    </div>
+
+    <div class="panel" id="orderPanel">
+      <h3>Order Resource</h3>
+      <div class="row">
+        <select id="orderResource"></select>
+      </div>
+      <div class="hint">Enter Order mode, pick a resource, then click any non-city hex to install it there for -5. Climate is randomized.</div>
     </div>
 
     <div class="panel" id="corpPanel">
@@ -186,6 +213,15 @@
       <div class="hint">Enter Luxury mode, then click 3 mutually-adjacent populated hexes.</div>
     </div>
 
+    <div class="panel" id="climatePanel" style="display:none;">
+      <h3>Climate Shift</h3>
+      <div id="climateInfo" class="hint" style="margin-bottom:8px;"></div>
+      <div class="row">
+        <button class="act" id="climateWarmer">&#9664; Warmer (-1)</button>
+        <button class="act" id="climateCooler">Cooler &#9654; (-1)</button>
+      </div>
+    </div>
+
     <div class="panel">
       <h3>Log</h3>
       <div id="log"></div>
@@ -202,9 +238,22 @@
   </div>
 </div>
 
+<div id="gamewon">
+  <div class="winCard">
+    <h2>&#9733; MESSAGE FROM THE COUNCIL &#9733;</h2>
+    <p id="winLetter"></p>
+    <div class="sig">— The Colonial Council</div>
+    <div class="row" style="margin-top:16px;justify-content:center;">
+      <button class="act primary" id="continueBtn">Continue Colonizing</button>
+      <button class="act" onclick="location.reload()">Restart</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ======================= CONFIG ======================= */
 const RADIUS = 3;
+const SCORE_TO_WIN = 100; // mod this to change how much score is needed to win
 const RESOURCES = ['forest','grain','water','oxygen','carbon','metal'];
 const RESOURCE_LABEL = {forest:'Forest',grain:'Grain',water:'Water',oxygen:'Oxygen',carbon:'Carbon',metal:'Metal'};
 const CLIMATES = ['hot','arid','plains','temperate','cold','arctic']; // ordered for climate-change steps
@@ -232,7 +281,10 @@ let state = {
   colonistShip: null,
   corpClickSet: [],
   luxClickSet: [],
+  climateHex: null,   // [q,r] currently selected for climate shift mode
+  hoverHex: null,      // [q,r] currently hovered for the info banner
   gameOver:false,
+  gameWon:false,
 };
 
 function key(q,r){return q+','+r;}
@@ -325,6 +377,10 @@ function addScore(delta, msg){
   if(state.score<=0){
     state.gameOver = true;
   }
+  if(!state.gameWon && state.score>=SCORE_TO_WIN){
+    state.gameWon = true;
+    showWinLetter();
+  }
 }
 function logMsg(msg, delta){
   const el = document.createElement('div');
@@ -341,17 +397,30 @@ function placeTileAt(q,r){
   const chosen = state.draw[state.selectedDraw];
   if(!chosen) return;
   const isReplace = t.filled;
-  if(isReplace){
-    if(!canAfford(1)){ flashHint('Not enough score to re-terraform this tile.'); return; }
-  }
+  if(!canAfford(1)){ flashHint('Not enough score to place a tile.'); return; }
   t.resource = chosen.resource;
   t.climate = chosen.climate;
   t.filled = true;
-  if(isReplace) addScore(-1, `Re-terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`);
-  else logMsg(`Terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`, 0);
+  addScore(-1, isReplace
+    ? `Re-terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`
+    : `Terraformed hex (${q},${r}) -> ${RESOURCE_LABEL[t.resource]}/${CLIMATE_LABEL[t.climate]}`);
   state.draw.splice(state.selectedDraw,1);
   state.selectedDraw = null;
   refillDraw();
+  state.turn++;
+  checkCities();
+  render();
+}
+
+function orderResourceAt(q,r){
+  const t = state.tiles[key(q,r)];
+  if(!t || t.isCity || t.pop) return;
+  if(!canAfford(5)){ flashHint('Not enough score to place a special order (-5).'); return; }
+  const resource = document.getElementById('orderResource').value;
+  t.resource = resource;
+  t.climate = rand(CLIMATES);
+  t.filled = true;
+  addScore(-5, `Special-ordered ${RESOURCE_LABEL[resource]} on hex (${q},${r}) -> ${CLIMATE_LABEL[t.climate]}`);
   state.turn++;
   checkCities();
   render();
@@ -403,7 +472,7 @@ function climateStep(q,r,dir){
   if(!t || !t.filled || t.pop) return;
   const idx = CLIMATES.indexOf(t.climate);
   const next = idx+dir;
-  if(next<0 || next>=CLIMATES.length) return;
+  if(next<0 || next>=CLIMATES.length){ flashHint('Already at the end of the climate scale.'); return; }
   if(!canAfford(1)){ flashHint('Not enough score to shift climate.'); return; }
   t.climate = CLIMATES[next];
   addScore(-1, `Climate shifted on (${q},${r}) -> ${CLIMATE_LABEL[t.climate]}`);
@@ -650,6 +719,14 @@ function draw(){
       ctx.closePath(); ctx.stroke();
       ctx.restore();
     }
+    if(state.mode==='climate' && state.climateHex && state.climateHex[0]===t.q && state.climateHex[1]===t.r){
+      ctx.save();
+      ctx.lineWidth=3; ctx.strokeStyle = '#f2b84b';
+      ctx.beginPath();
+      corners.forEach(([x,y],i)=> i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+      ctx.closePath(); ctx.stroke();
+      ctx.restore();
+    }
     if(isClickedForMultiSelect(t.q,t.r)){
       ctx.save();
       ctx.fillStyle='rgba(242,184,75,.35)';
@@ -665,6 +742,7 @@ function isSelectable(q,r){
   const t = state.tiles[key(q,r)];
   if(!t || t.isCity) return false;
   if(state.mode==='place') return !t.pop && state.selectedDraw!==null;
+  if(state.mode==='order') return !t.pop;
   if(state.mode==='colonist') return t.filled && !t.pop && state.colonistShip!==null;
   if(state.mode==='robot') return t.filled && !t.pop;
   if(state.mode==='climate') return t.filled && !t.pop;
@@ -682,6 +760,7 @@ function isInSet(set,q,r){ return set.some(p=>p[0]===q&&p[1]===r); }
 /* ======================= UI BUILD ======================= */
 const MODES = [
   {id:'place', label:'Terraform'},
+  {id:'order', label:'Order Resource'},
   {id:'colonist', label:'Colonist'},
   {id:'robot', label:'Robot'},
   {id:'climate', label:'Climate Shift'},
@@ -689,7 +768,8 @@ const MODES = [
   {id:'corp', label:'Corporation'},
 ];
 const MODE_HINT = {
-  place: 'Pick a tile on the right, then click an empty hex to place it. Clicking an already-terraformed unpopulated hex re-terraforms it for -1.',
+  place: 'Pick a tile on the right, then click an empty hex to place it. Clicking an already-terraformed unpopulated hex re-terraforms it. Either way costs -1.',
+  order: 'Pick a resource in the Order Resource panel, then click any non-city hex to install it there for -5. Climate is randomized.',
   colonist: 'Pick a ship below, then click a terraformed hex matching its favorite resource or climate.',
   robot: 'Click any terraformed, unpopulated hex to deploy a robot for -1 score.',
   climate: 'Click a terraformed, unpopulated hex, then use the +/- buttons that appear to shift its climate for -1 each step.',
@@ -702,11 +782,13 @@ function setMode(m){
   state.colonistShip = null;
   state.corpClickSet = [];
   state.luxClickSet = [];
+  state.climateHex = null;
   document.getElementById('modehint').textContent = MODE_HINT[m];
   renderModebar();
   renderShips();
   updateCorpUI();
   updateLuxUI();
+  updateClimateUI();
   render();
 }
 
@@ -849,6 +931,15 @@ function updateLuxUI(){
   btn.disabled = state.luxClickSet.length!==3 || state.mode!=='luxury';
 }
 
+function showWinLetter(){
+  const letter = document.getElementById('winLetter');
+  letter.innerHTML = `To the Colony Administrator,<br><br>
+    The Council has reviewed the latest survey of your settlement and finds it, frankly, remarkable. Cities fed, ships disembarked, land productively held — a model of stability and prosperity that few outposts ever reach.<br><br>
+    You have reached ${SCORE_TO_WIN} points of colonial standing. In recognition, the Council is pleased to reward you with... more work. Further sectors await terraforming, and the Council trusts you'll rise to it.<br><br>
+    Congratulations, Administrator.`;
+  document.getElementById('gamewon').classList.add('show');
+}
+
 function flashHint(msg){
   const el = document.getElementById('modehint');
   const old = el.textContent;
@@ -867,6 +958,7 @@ function render(){
   renderCities();
   updateCorpUI();
   updateLuxUI();
+  updateClimateUI();
   draw();
   document.getElementById('discardBtn').disabled = state.selectedDraw===null || state.score<1;
   if(state.gameOver) document.getElementById('gameover').classList.add('show');
@@ -902,6 +994,50 @@ document.getElementById('board').addEventListener('click', (e)=>{
   handleHexClick(q,r);
 });
 
+document.getElementById('board').addEventListener('mousemove', (e)=>{
+  const canvas = e.target;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+  const x = (e.clientX-rect.left)*scaleX - canvas.width/2;
+  const y = (e.clientY-rect.top)*scaleY - canvas.height/2;
+  const [q,r] = pixelToAxial(x,y);
+  const t = state.tiles[key(q,r)];
+  if(!t){ if(state.hoverHex){ state.hoverHex=null; renderHoverBanner(); } return; }
+  if(state.hoverHex && state.hoverHex[0]===q && state.hoverHex[1]===r) return;
+  state.hoverHex = [q,r];
+  renderHoverBanner();
+});
+document.getElementById('board').addEventListener('mouseleave', ()=>{
+  state.hoverHex = null;
+  renderHoverBanner();
+});
+
+function renderHoverBanner(){
+  const el = document.getElementById('hoverBanner');
+  if(!state.hoverHex){ el.innerHTML = 'Hover a hex to inspect it.'; return; }
+  const [q,r] = state.hoverHex;
+  const t = state.tiles[key(q,r)];
+  if(!t){ el.innerHTML = 'Hover a hex to inspect it.'; return; }
+  if(t.isCity){
+    const c = state.cityHexes[t.cityIdx];
+    const names = ['NEW HELIOS','KAPPA STATION','ARCADIA'];
+    el.innerHTML = `<span class="tag">City</span> <b>${names[t.cityIdx]}</b> <span class="tag">${patternLabel(c.pattern)}</span> <span class="tag">${c.done?'FED':'NEEDY'}</span>`;
+    return;
+  }
+  if(!t.filled){
+    el.innerHTML = `<span class="tag">Hex (${q},${r})</span> <span class="tag">Unterraformed / raw land</span>`;
+    return;
+  }
+  const popTxt = t.pop? (t.pop.type==='robot'? 'Populated (Robot)' : 'Populated (Colonist)') : 'Unpopulated';
+  const corpTxt = t.corp? `Corporate (${CORP_CLASS[t.corp.cls].name})` : 'Public';
+  const luxTxt = t.luxury? 'Luxury' : 'Wild';
+  el.innerHTML = `<span class="tag"><span class="swatchsm" style="background:${CLIMATE_HEX[t.climate]}"></span>${CLIMATE_LABEL[t.climate]}</span>
+    <span class="tag">${RESOURCE_LABEL[t.resource]}</span>
+    <span class="tag">${popTxt}</span>
+    <span class="tag">${corpTxt}</span>
+    <span class="tag">${luxTxt}</span>`;
+}
+
 let climatePopup = null;
 function handleHexClick(q,r){
   const t = state.tiles[key(q,r)];
@@ -909,6 +1045,8 @@ function handleHexClick(q,r){
   if(state.mode==='place'){
     if(state.selectedDraw===null){ flashHint('Select a tile from the draw first.'); return; }
     placeTileAt(q,r);
+  } else if(state.mode==='order'){
+    orderResourceAt(q,r);
   } else if(state.mode==='colonist'){
     if(state.colonistShip===null){ flashHint('Select a ship first.'); return; }
     placeColonistAt(q,r);
@@ -916,7 +1054,9 @@ function handleHexClick(q,r){
     placeRobotAt(q,r);
   } else if(state.mode==='climate'){
     if(!t.filled || t.pop) return;
-    showClimatePopup(q,r);
+    state.climateHex = [q,r];
+    updateClimateUI();
+    render();
   } else if(state.mode==='luxury'){
     if(!t.pop || t.luxury) return;
     if(isInSet(state.luxClickSet,q,r)) state.luxClickSet = state.luxClickSet.filter(p=>!(p[0]===q&&p[1]===r));
@@ -932,13 +1072,20 @@ function handleHexClick(q,r){
   }
 }
 
-function showClimatePopup(q,r){
+function updateClimateUI(){
+  const panel = document.getElementById('climatePanel');
+  if(state.mode!=='climate' || !state.climateHex){
+    panel.style.display='none';
+    return;
+  }
+  panel.style.display='block';
+  const [q,r] = state.climateHex;
   const t = state.tiles[key(q,r)];
-  const goUp = confirm(`Hex (${q},${r}) is ${CLIMATE_LABEL[t.climate]}.\nOK = shift toward Pink Arctic (-1)\nCancel = shift toward Red Hot (-1)\n(Close/Escape to do nothing)`);
-  climateStepFromDialog(q,r,goUp);
-}
-function climateStepFromDialog(q,r,goUp){
-  climateStep(q,r, goUp? 1 : -1);
+  if(!t || !t.filled || t.pop){ state.climateHex=null; panel.style.display='none'; return; }
+  document.getElementById('climateInfo').innerHTML = `Hex (${q},${r}) is currently <b style="color:${CLIMATE_HEX[t.climate]}">${CLIMATE_LABEL[t.climate]}</b> <span style="color:var(--dim)">(${CLIMATE_LUX[t.climate]})</span>. Scale runs Red Hot &rarr; Pink Arctic.`;
+  const idx = CLIMATES.indexOf(t.climate);
+  document.getElementById('climateWarmer').disabled = idx<=0;
+  document.getElementById('climateCooler').disabled = idx>=CLIMATES.length-1;
 }
 
 document.getElementById('discardBtn').onclick = discardSelectedDraw;
@@ -947,6 +1094,19 @@ document.getElementById('confirmCorp').onclick = tryConfirmCorp;
 document.getElementById('cancelCorp').onclick = ()=>{ state.corpClickSet=[]; updateCorpUI(); render(); };
 document.getElementById('confirmLux').onclick = tryConfirmLux;
 document.getElementById('cancelLux').onclick = ()=>{ state.luxClickSet=[]; updateLuxUI(); render(); };
+document.getElementById('climateWarmer').onclick = ()=>{
+  if(!state.climateHex) return;
+  climateStep(state.climateHex[0], state.climateHex[1], -1);
+  updateClimateUI();
+};
+document.getElementById('climateCooler').onclick = ()=>{
+  if(!state.climateHex) return;
+  climateStep(state.climateHex[0], state.climateHex[1], 1);
+  updateClimateUI();
+};
+document.getElementById('continueBtn').onclick = ()=>{
+  document.getElementById('gamewon').classList.remove('show');
+};
 
 /* ======================= INIT ======================= */
 function init(){
@@ -954,6 +1114,9 @@ function init(){
   buildShips();
   refillDraw();
   state.selectedDraw = 0;
+  document.getElementById('winTargetVal').textContent = SCORE_TO_WIN;
+  const orderSel = document.getElementById('orderResource');
+  orderSel.innerHTML = RESOURCES.map(r=>`<option value="${r}">${RESOURCE_LABEL[r]}</option>`).join('');
   renderModebar();
   renderLegend();
   logMsg('Colony ships in orbit. Board scanned. Begin terraforming.', 0);
