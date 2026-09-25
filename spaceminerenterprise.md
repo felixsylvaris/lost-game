@@ -20,6 +20,8 @@ Features (mostly future feature):
 * Some RD or licensing
 * marketing among smugglers to get new contracts
 
+*Not yet designed:* Tetris minigame is not here. No romance with space margaret tacher yet. No API to compare our profit with ai frontier companies yet. 
+
 
 # Minimal working version. 
 
