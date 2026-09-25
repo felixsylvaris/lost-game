@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kessler &amp; Vance — Extraction Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1EF; --panel:#FBFCFB; --panel2:#F2F5F3; --ink:#10201C; --ink-dim:#57645F;
+  --line:#C7D2CC; --accent:#B9862E; --good:#2F7A4F; --bad:#A23B2B; --accent2:#2A6E78;
+  --radius:3px;
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161A; --panel:#171F24; --panel2:#1C252A; --ink:#E7EEE9; --ink-dim:#8B9A95;
+    --line:#2B3438; --accent:#D7A356; --good:#63B98A; --bad:#E17F6E; --accent2:#4FA3AE;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161A; --panel:#171F24; --panel2:#1C252A; --ink:#E7EEE9; --ink-dim:#8B9A95;
+  --line:#2B3438; --accent:#D7A356; --good:#63B98A; --bad:#E17F6E; --accent2:#4FA3AE;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  padding:calc(18px + env(safe-area-inset-top,0px)) 14px calc(24px + env(safe-area-inset-bottom,0px));
+}
+h1,h2,h3{font-family:'IBM Plex Sans',sans-serif; margin:0;}
+.num{font-family:'IBM Plex Mono',monospace;}
+.wrap{max-width:980px; margin:0 auto;}
+header{
+  display:flex; flex-wrap:wrap; gap:10px 24px; align-items:baseline;
+  border-bottom:2px solid var(--ink); padding-bottom:12px; margin-bottom:16px;
+}
+header h1{font-size:1.3rem; font-weight:700; letter-spacing:.2px;}
+header .tag{color:var(--ink-dim); font-size:.85rem;}
+.stat-row{display:flex; gap:22px; flex-wrap:wrap; margin-left:auto;}
+.stat{font-size:.78rem; color:var(--ink-dim);}
+.stat b{display:block; font-family:'IBM Plex Mono',monospace; font-size:1.15rem; color:var(--ink); font-weight:600;}
+.stat.cash b.neg{color:var(--bad);}
+.grid{display:grid; grid-template-columns:1.1fr 1fr; gap:14px;}
+@media(max-width:760px){.grid{grid-template-columns:1fr;}}
+.panel{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px 14px 16px;
+}
+.panel h2{font-size:.95rem; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+table{width:100%; border-collapse:collapse; font-size:.82rem;}
+th{text-align:left; color:var(--ink-dim); font-weight:500; font-size:.72rem; padding:4px 6px; border-bottom:1px solid var(--line);}
+td{padding:5px 6px; border-bottom:1px solid var(--line); vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+select,input[type=number]{
+  font:inherit; font-family:'IBM Plex Mono',monospace; background:var(--panel2); color:var(--ink);
+  border:1px solid var(--line); border-radius:var(--radius); padding:3px 5px; width:100%;
+}
+input[type=number]{width:56px;}
+input[type=radio]{accent-color:var(--accent2);}
+button{
+  font:inherit; font-weight:600; cursor:pointer; border-radius:var(--radius);
+  border:1px solid var(--ink); background:var(--panel2); color:var(--ink); padding:6px 11px; font-size:.78rem;
+}
+button:hover{background:var(--line);}
+button.sell{border-color:var(--good); color:var(--good);}
+button.buy{border-color:var(--accent2); color:var(--accent2);}
+button.emg{border-color:var(--bad); color:var(--bad); font-size:.72rem; padding:5px 8px;}
+.qtybtn{display:flex; gap:4px; align-items:center;}
+.depleted{color:var(--bad); font-size:.72rem;}
+.bar{height:6px; background:var(--panel2); border:1px solid var(--line); border-radius:2px; overflow:hidden; margin-top:4px;}
+.bar i{display:block; height:100%; background:var(--accent2);}
+.log{list-style:none; margin:0; padding:0; font-size:.78rem; max-height:190px; overflow-y:auto;}
+.log li{padding:5px 0; border-bottom:1px dashed var(--line); color:var(--ink-dim);}
+.log li:first-child{color:var(--ink);}
+.actions{display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;}
+.advance{background:var(--ink); color:var(--panel); border-color:var(--ink); padding:11px 22px; font-size:.9rem;}
+.advance:hover{opacity:.88; background:var(--ink);}
+.cheat-note{font-size:.68rem; color:var(--ink-dim); margin-top:3px;}
+.emg-row{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+.insolvent{background:var(--bad); color:#fff; padding:7px 10px; border-radius:var(--radius); font-size:.8rem; margin-bottom:12px;}
+.mut{color:var(--ink-dim);}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const RES = {
+  water:{label:'Water ice'}, silica:{label:'Silica'}, carbon:{label:'Carbon'},
+  heavy:{label:'Heavy minerals'}, rare:{label:'Rare minerals'}
+};
+let S = {
+  cash: 600, turn: 1, food: 20, parts: 12, condition: 100,
+  workers: [
+    {name:'Rook Adisa', role:'Miner Pilot', wage:9},
+    {name:'Denny Okafor', role:'Mechanic', wage:8},
+    {name:'Mira Solheim', role:'Staffer', wage:5},
+    {name:'Tobin Kaur', role:'Staffer', wage:5},
+  ],
+  selected: 0,
+  inv: {water:0, silica:0, carbon:0, heavy:0, rare:0},
+  prices: {water:2, silica:4, carbon:5, heavy:14, rare:45},
+  asteroids: [
+    {name:'Ceres Vein A', res:'water', dep:500, ease:0.9},
+    {name:'Ceres Vein B', res:'water', dep:400, ease:0.7},
+    {name:'Silicara Belt A', res:'silica', dep:300, ease:0.6},
+    {name:'Silicara Belt B', res:'silica', dep:250, ease:0.5},
+    {name:'Carbonis Major', res:'carbon', dep:450, ease:0.8},
+    {name:'Carbonis Minor', res:'carbon', dep:350, ease:0.65},
+    {name:'Ironclad Rock', res:'heavy', dep:150, ease:0.4},
+    {name:'Ironclad Deep', res:'heavy', dep:120, ease:0.3},
+    {name:'Glimmer Shard', res:'rare', dep:40, ease:0.2},
+    {name:'Glimmer Vein', res:'rare', dep:30, ease:0.15},
+  ],
+  log: ['Company founded. First month begins.']
+};
+
+function log(m){ S.log.unshift(m); if(S.log.length>10) S.log.pop(); }
+function money(n){ return (n<0?'-':'') + Math.abs(n).toFixed(0) + ' cr'; }
+function month(){ return ((S.turn-1)%12)+1; }
+function year(){ return Math.ceil(S.turn/12); }
+
+function setRole(i,v){ S.workers[i].role = v; render(); }
+function setWage(i,v){ S.workers[i].wage = Math.max(5, Number(v)||5); render(); }
+function selectAsteroid(i){ S.selected = i; render(); }
+
+function buy(good){
+  const el = document.getElementById('q-'+good);
+  const qty = Math.max(0, Math.floor(Number(el.value)||0));
+  const price = good==='food' ? 1.5 : 3;
+  const cost = qty*price;
+  if(qty<=0) return;
+  if(cost > S.cash){ log(`Buy failed — not enough cash for ${qty} ${good}.`); render(); return; }
+  S.cash -= cost;
+  if(good==='food') S.food += qty; else S.parts += qty;
+  log(`Bought ${qty} ${good} for ${money(cost)}.`);
+  render();
+}
+function sell(res){
+  const el = document.getElementById('q-'+res);
+  let qty = Math.max(0, Math.floor(Number(el.value)||0));
+  qty = Math.min(qty, S.inv[res]);
+  if(qty<=0) return;
+  const rev = qty*S.prices[res];
+  S.inv[res] -= qty; S.cash += rev;
+  log(`Sold ${qty} ${RES[res].label.toLowerCase()} for ${money(rev)}.`);
+  render();
+}
+function emergencySell(){
+  let total = 0;
+  for(const r in S.inv){
+    if(S.inv[r]>0){ const rev = S.inv[r]*S.prices[r]*0.7; total += rev; S.inv[r]=0; }
+  }
+  if(total===0){ log('Emergency sale — nothing in the hold.'); }
+  else { S.cash += total; log(`Emergency sale of full cargo hold (70% price): ${money(total)}.`); }
+  render();
+}
+function emergencyFood(){
+  const qty = 10, cost = qty*3;
+  if(cost > S.cash){ log('Emergency food buy failed — not enough cash.'); render(); return; }
+  S.cash -= cost; S.food += qty;
+  log(`Emergency food buy: ${qty} food for ${money(cost)} (2x price).`);
+  render();
+}
+function cheat(){ S.cash += 10000; log('Space Union Emergency Funds deposited: +10,000 cr.'); render(); }
+
+function nextTurn(){
+  const wages = S.workers.reduce((s,w)=>s+w.wage,0);
+  S.cash -= wages;
+  log(`Paid wages: ${money(wages)} to ${S.workers.length} crew.`);
+
+  const hasStaffer = S.workers.some(w=>w.role==='Staffer');
+  const consumption = S.workers.length + (hasStaffer?0:1);
+  const eaten = Math.min(S.food, consumption);
+  S.food -= eaten;
+  const hungry = eaten < consumption;
+  if(hungry) log(`Food shortfall — crew went hungry this month (mining output cut).`);
+
+  S.condition = Math.max(0, S.condition - 8);
+  const need = 100 - S.condition;
+  if(need>0 && S.parts>0){
+    const partsNeeded = Math.ceil(need/10);
+    const used = Math.min(S.parts, partsNeeded);
+    S.parts -= used; S.condition = Math.min(100, S.condition + used*10);
+  }
+  const hasMechanic = S.workers.some(w=>w.role==='Mechanic');
+  let breakdown = false;
+  if(S.condition < 40){
+    const chance = hasMechanic ? 0.10 : 0.30;
+    if(Math.random() < chance){ breakdown = true; log('Vessel breakdown — no mining this month.'); }
+  }
+
+  const hasPilot = S.workers.some(w=>w.role==='Miner Pilot');
+  if(!breakdown){
+    if(!hasPilot){ log('No Miner Pilot assigned — vessel stayed docked.'); }
+    else {
+      const a = S.asteroids[S.selected];
+      if(a.dep <= 0){ log(`${a.name} is depleted — nothing extracted.`); }
+      else {
+        const base = Math.ceil(10*a.ease);
+        let eff = S.condition/100;
+        if(hungry) eff *= 0.5;
+        let amount = Math.min(Math.round(base*eff), a.dep);
+        a.dep -= amount; S.inv[a.res] += amount;
+        log(`Mined ${amount} ${RES[a.res].label.toLowerCase()} from ${a.name}.`);
+      }
+    }
+  }
+
+  for(const r in S.prices){ S.prices[r] = Math.max(1, +(S.prices[r]*(0.9+Math.random()*0.2)).toFixed(1)); }
+
+  S.turn++;
+  render();
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const cashCls = S.cash < 0 ? 'neg' : '';
+  app.innerHTML = `
+    <header>
+      <div>
+        <h1>Kessler &amp; Vance Extraction Co.</h1>
+        <div class="tag">Independent asteroid mining concern</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat cash">Cash on hand<b class="num ${cashCls}">${money(S.cash)}</b></div>
+        <div class="stat">Month<b class="num">${month()} of Year ${year()}</b></div>
+        <div class="stat">Vessel condition<b class="num">${S.condition}%</b></div>
+      </div>
+    </header>
+    ${S.cash < 0 ? `<div class="insolvent">Cash is negative. Sell cargo or use emergency trade before next month's wages are due.</div>` : ''}
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Crew &amp; vessel</h2>
+        <table>
+          <tr><th>Name</th><th>Role</th><th>Wage/mo</th></tr>
+          ${S.workers.map((w,i)=>`
+            <tr>
+              <td>${w.name}</td>
+              <td><select onchange="setRole(${i},this.value)">
+                ${['Miner Pilot','Mechanic','Staffer','Idle'].map(r=>`<option ${w.role===r?'selected':''}>${r}</option>`).join('')}
+              </select></td>
+              <td><input type="number" min="5" class="num" value="${w.wage}" onchange="setWage(${i},this.value)"></td>
+            </tr>`).join('')}
+        </table>
+        <p class="mut" style="font-size:.75rem;margin:10px 0 2px;">Vessel condition</p>
+        <div class="bar"><i style="width:${S.condition}%"></i></div>
+        <p class="mut" style="font-size:.78rem;margin-top:10px;">Food stock: <b class="num">${S.food}</b> &nbsp; Spare parts: <b class="num">${S.parts}</b></p>
+
+        <h2 style="margin-top:16px;">Mining — select asteroid</h2>
+        <table>
+          <tr><th></th><th>Asteroid</th><th>Resource</th><th>Deposit left</th><th>Est. yield/mo</th></tr>
+          ${S.asteroids.map((a,i)=>`
+            <tr>
+              <td><input type="radio" name="ast" ${S.selected===i?'checked':''} ${a.dep<=0?'disabled':''} onchange="selectAsteroid(${i})"></td>
+              <td>${a.name}</td>
+              <td>${RES[a.res].label}</td>
+              <td class="num">${a.dep<=0?'<span class="depleted">depleted</span>':a.dep}</td>
+              <td class="num">${Math.ceil(10*a.ease)}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>Sell cargo</h2>
+        <table>
+          <tr><th>Resource</th><th>Held</th><th>Price/unit</th><th></th></tr>
+          ${Object.keys(RES).map(r=>`
+            <tr>
+              <td>${RES[r].label}</td>
+              <td class="num">${S.inv[r]}</td>
+              <td class="num">${S.prices[r].toFixed(1)} cr</td>
+              <td><div class="qtybtn"><input type="number" id="q-${r}" min="0" max="${S.inv[r]}" value="${Math.min(S.inv[r],5)}"><button class="sell" onclick="sell('${r}')">Sell</button></div></td>
+            </tr>`).join('')}
+        </table>
+
+        <h2 style="margin-top:16px;">Buy supplies</h2>
+        <table>
+          <tr><th>Supply</th><th>Price/unit</th><th></th></tr>
+          <tr>
+            <td>Food</td><td class="num">1.5 cr</td>
+            <td><div class="qtybtn"><input type="number" id="q-food" min="0" value="10"><button class="buy" onclick="buy('food')">Buy</button></div></td>
+          </tr>
+          <tr>
+            <td>Spare parts</td><td class="num">3 cr</td>
+            <td><div class="qtybtn"><input type="number" id="q-parts" min="0" value="5"><button class="buy" onclick="buy('parts')">Buy</button></div></td>
+          </tr>
+        </table>
+        <div class="emg-row">
+          <button class="emg" onclick="emergencySell()">Emergency sell full cargo (70% price)</button>
+          <button class="emg" onclick="emergencyFood()">Emergency buy 10 food (2x price)</button>
+        </div>
+
+        <h2 style="margin-top:16px;">Operations log</h2>
+        <ul class="log">${S.log.map(l=>`<li>${l}</li>`).join('')}</ul>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div>
+        <button class="advance" onclick="nextTurn()">Advance to next month</button>
+      </div>
+      <div style="text-align:right;">
+        <button onclick="cheat()">Get Space Union Funds</button>
+        <div class="cheat-note">Testing cheat — adds 10,000 cr</div>
+      </div>
+    </div>
+  `;
+}
+render();
+</script>
+</body>
+</html>
