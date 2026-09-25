@@ -1,58 +1,109 @@
 # About
-This is a vibecode  game, by default HTML .js; Tiny project. 
-The story: We run space mining company. We manage crew, equipment, sell our goods. 
-Gameplay: It is spreadsheet simulator with tetris puzzle mining and procesing. 
-Inner layer: This is  a boardgame which could be given to High school econ classes to teach students how to run business, at least principles. Some business expenses could have game world names, like instead of paying taxes, we pay space company license. 
 
-Goal of project: Is to make business simulator which is very businessy. Useful educational tool.
-Goal of game: Get better cash flow than anthropic. 
+This is a tiny vibecoded HTML/JS game.
 
-Features (mostly future feature):
-* Workers, paying them, training, hiring. Tentacle fridays. 
-* Equipment, maintanence. 
-* General base work, clean, cook. 
-* Admin and HR cost? Security cost is just another cost. Is battlecruiser tax deductable?
-* Product decision, for starter which mineral to mine. 
-* Loans, and other capital acquisition
-* Maintaining clients and suppliers. 
-* Possible vertical integration. 
-* Shiftining to procesing
-* Some RD or licensing
-* marketing among smugglers to get new contracts
+You run a small space-mining company. You manage crew, equipment, mining operations, inventory, customers, suppliers, and cash.
 
-*Not yet designed:* Tetris minigame is not here. No romance with space margaret tacher yet. No API to compare our profit with ai frontier companies yet. 
+The core game is a spreadsheet-style business simulator, with a Tetris-like mining/processing minigame as the operational layer.
 
+The game is designed around real business principles rather than space-combat mechanics. It could potentially work as a simple educational game for high-school economics classes.
 
-# Minimal working version. 
+Space terminology is used for flavor. For example, instead of paying ordinary taxes, the company might pay a Space Company License.
 
-## Workers pannel 
-We have 4 workers, with names, and drop down list to role to assign them to. 
-Roles: Miner Pilot*, Mechanic*, Stafer. 
-*Miner Pilot is required to mine. 
-* Mechanic is not literally requied, but there is chance drill shuttle breaks down each turn. 
-Staffers do everything else, mostly cleaning, and cooking. 
-Wage: Each worker has wage, minimal value is 5c. credit is universal cash unit. But we can put any number here. 
+# Core gameplay loop
 
-## Budget Panel
-It calculates our turn costs. And 12turn costs. 12 is annual. 
-Initially our cost are: wages, food, maintainence. 
-Initially our profits are: selling ore. 
+Assign workers → choose asteroid → mine → manage inventory → buy supplies → sell products → pay expenses → invest → repeat.
 
-** Mining Panel
-We have 10 asteroids to pick from. Each asteroid have 1 resource, present deposit, ease (of extraction)
-Each have resource type: Water (low cost, high demand, mass) , Silica, Carbon (high demand, mass) , Heavy, Rare (rare, expansive, shallow) . 
+## Time
 
-In mining panel we also have list of drill vessels (1). And drop down list which asteroid we wanna mine today. The game should remember our pick for next turn. But we can always change it. 
-Drill Vessel mines 10 units * ease, round up. 
+One turn = one month.
+12 turns = one year.
 
-** Sell panel
-We can have monthly trades. Sell, buy. Buy after sell. We can only buy when we have cash. 
-Or emergency trade 
-We generally Buy food and parts, and sell ore. 
+## Initial objective
 
-There is also temporary button "Get Space Union Funds" Which adds 10k.c. But this is more cheat code to not constantly bancrupt when we are trsting. 
+Keep the company solvent and grow its cash flow.
 
+## Long-term objective
 
+Build a larger and more profitable space-mining business through better equipment, workers, financing, processing, contracts, and vertical integration.
 
+Initial workers
 
+Four workers, each with a name, wage, and assigned role:
 
+Miner Pilot — required for mining.
+Mechanic — reduces the risk/consequences of vessel breakdowns.
+Staffer — handles general base work such as cooking and cleaning.
+
+Wages are paid every turn. Minimum wage is 5 credits, but the player can set higher wages.
+
+### Initial expenses
+
+Wages
+Food
+Maintenance
+
+Initial revenue
+
+Sale of mined ore
+
+### Mining
+
+The player chooses from 10 asteroids. Each asteroid has:
+
+Resource type
+Remaining deposit
+Extraction difficulty/ease
+
+Initial resources:
+
+Water — cheap, high demand, high mass
+Silica
+Carbon — high demand, high mass
+Heavy minerals
+Rare minerals — rare, expensive, shallow deposits
+
+The company initially owns one drill vessel.
+
+Each month, the vessel extracts:
+
+ceil(10 × extraction ease)
+
+The selected asteroid remains selected for the following turn unless the player changes it.
+
+## Trading
+
+The company can conduct regular monthly trades.
+
+The player sells mined products and buys supplies such as food and spare parts.
+
+Buy orders require available cash, so selling inventory before buying supplies can become important.
+
+Emergency trades are also available, presumably at worse prices.
+
+ Testing cheat
+
+A temporary Get Space Union Funds button adds 10,000 credits. This exists purely to prevent repeated bankruptcy while testing the game.
+
+## Future systems
+
+Hiring, wages and worker training
+Equipment maintenance and upgrades
+Base operations
+Administration / HR
+Security
+Taxes/licensing
+Loans and other financing
+Customers and suppliers
+Product selection and market strategy
+Processing/refining
+Vertical integration
+R&D
+Licensing
+Marketing and contract acquisition
+
+### Not yet implemented
+
+Tetris mining/processing minigame
+Romance with Space Margaret Thatcher
+API comparison with AI frontier companies
